@@ -51,7 +51,8 @@ class Event:
         if len(types) == 1:
             globals()[T] = TypeVar("T", bound=types[0])
         else:
-            globals()[T] = TypeVar("T", *types)
+            pass
+            # globals()[T] = TypeVar("T", *types)
 
     @property
     def history(self) -> List[Dict[str, Any]]:
@@ -225,10 +226,18 @@ class Event:
         """
         return self._trigger(*args)
 
-    def _validate_input(self, *args):
+    def _validate_input(self, *args) -> None:
+        # Make sure the argument types matches the self.type_signature
         for arg, t in zip(args, self.type_signature, strict=True):
-            if not isinstance(arg, t):
-                raise exceptions.EventSignalTypeError(f"Event can only be triggered with the signature {self.type_signature}, received {set(type(arg) for arg in args)}")
+            try:
+                if not isinstance(arg, t):
+                    raise exceptions.InvalidArgumentType(f"Expected {t} but got {type(arg)}")
+            except TypeError as e:
+                if '__constraints__' in dir(t):
+                    if not isinstance(arg, t.__constraints__):
+                        raise exceptions.InvalidArgumentType(f"Expected {t.__constraints__} but got {type(arg)}")
+                else:
+                    raise e
 
     def _trigger(
             self,
@@ -302,7 +311,7 @@ class Event:
         ```
         """
         try:
-            if isinstance(exception, listener.exceptions):
+            if hasattr(listener, 'exceptions') and isinstance(exception, listener.exceptions):
                 listener.error_handler(*args)
             else:
                 raise exception
