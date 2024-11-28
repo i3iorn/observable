@@ -4,3 +4,7 @@ class NoListenerException(Exception):
 
 class EventSignalTypeError(Exception):
     pass
+
+
+class InvalidArgumentType(Exception):
+    pass
