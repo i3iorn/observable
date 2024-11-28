@@ -1,0 +1,203 @@
+{
+    "$id": "https://schrammel.dev/schemas/message_schema.json",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "schema_version": "1.0.0",
+    "type": "object",
+    "properties": {
+        "message": {
+            "$ref": "#/$defs/description",
+            "examples": ["This is a message."],
+            "description": "The message of the event or signal."
+        },
+        "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z\\.-]+)?(\\+[0-9A-Za-z\\.-]+)?$",
+            "examples": ["1.0.0", "1.0.0-alpha", "1.0.0+001"],
+            "description": "The schema version of the event or signal message, following semantic versioning."
+        },
+        "messageId": {
+            "type": "string",
+            "format": "uuid",
+            "examples": ["9f6ad7b3-c8e5-4608-9e0a-129839a0a3ef"],
+            "description": "A unique identifier for the message."
+        },
+        "correlationId": {
+            "type": ["string", "null"],
+            "format": "uuid",
+            "examples": ["9f6ad7b3-c8e5-4608-9e0a-129839a0a3ef"],
+            "description": "An identifier to correlate related messages."
+        },
+        "priority": {
+            "type": "string",
+            "enum": ["low", "medium", "high"],
+            "description": "The priority of the event or signal."
+        },
+        "timestamp": {
+            "$ref": "#/$defs/timestamp",
+            "description": "The time the event or signal was created."
+        },
+        "sender": {
+            "type": "string",
+            "pattern": "^[\\w\\d_\\.-]+$",
+            "examples": ["my-sender", "main-py", "my.sender"],
+            "minLength": 3,
+            "maxLength": 64,
+            "description": "The name of the sender of the event or signal."
+        },
+        "tags": {
+            "type": ["array", "null"],
+            "items": {
+                "$ref": "#/$defs/simple_string",
+                "description": "Tag associated with the event or signal."
+            },
+            "description": "The tags associated with the event or signal."
+        },
+        "data": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "key": {
+                        "$ref": "#/$defs/simple_string",
+                        "description": "The key associated with the event or signal."
+                    },
+                    "value": { "$ref": "#/$defs/value" },
+                    "type": {
+                        "enum": ["string", "number", "boolean", "object", "array"],
+                        "description": "The type of the value associated with the event or signal."
+                    },
+                    "description": { "$ref": "#/$defs/description" }
+                },
+                "required": ["key", "value", "type"],
+                "additionalProperties": false,
+                "dependentSchemas": {
+                    "type": {
+                        "oneOf": [
+                            { "properties": { "type": { "const": "string" }, "value": { "type": "string" } } },
+                            { "properties": { "type": { "const": "number" }, "value": { "type": "number" } } },
+                            { "properties": { "type": { "const": "boolean" }, "value": { "type": "boolean" } } },
+                            { "properties": { "type": { "const": "object" }, "value": { "type": "object" } } },
+                            { "properties": { "type": { "const": "array" }, "value": { "type": "array" } } }
+                        ]
+                    }
+                },
+                "description": "The data associated with the event or signal."
+            },
+            "uniqueItems": true,
+            "description": "The data associated with the event or signal."
+        },
+        "metadata": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Optional metadata related to the event or signal."
+        },
+        "additionalProperties": false
+    },
+    "required": ["message", "timestamp", "sender", "version", "messageId"],
+    "description": "The schema for an event or signal message.",
+    "examples": [
+        {
+            "message": "This is a message.",
+            "timestamp": "2021-01-01T00:00:00Z",
+            "sender": "my-sender",
+            "version": "1.0.0"
+        },
+        {
+            "message": "This is a message.",
+            "timestamp": "2021-01-01T00:00:00Z",
+            "sender": "my-sender",
+            "version": "1.0.0",
+            "tags": ["tag1", "tag2"],
+            "data": [
+                {
+                    "key": "key1",
+                    "value": "value1",
+                    "type": "string",
+                    "description": "A description of the value associated with the event or signal."
+                },
+                {
+                    "key": "key2",
+                    "value": 2,
+                    "type": "number",
+                    "description": "A description of the value associated with the event or signal."
+                }
+            ]
+        },
+        {
+            "message": "System health check completed.",
+            "timestamp": "2024-11-27T12:00:00Z",
+            "sender": "health-check",
+            "version": "1.0.0",
+            "priority": "low",
+            "tags": ["health", "system"],
+            "data": [
+                {
+                    "key": "uptime",
+                    "value": 3600,
+                    "type": "number",
+                    "description": "System uptime in seconds."
+                }
+            ]
+        },
+        {
+            "message": "Critical error in service.",
+            "timestamp": "2024-11-27T13:00:00Z",
+            "sender": "error-logger",
+            "version": "1.0.0",
+            "priority": "high",
+            "tags": ["error", "critical"],
+            "data": [
+                {
+                    "key": "error_code",
+                    "value": "503",
+                    "type": "string",
+                    "description": "HTTP error code."
+                },
+                {
+                    "key": "service",
+                    "value": "payment-api",
+                    "type": "string",
+                    "description": "The service that reported the error."
+                }
+            ],
+            "metadata": {
+                "retry": true,
+                "attempts": 3
+            }
+        }
+    ],
+    "additionalProperties": false,
+    "$defs": {
+        "description": {
+            "type": "string",
+            "pattern": "^[\\w\\d\\ _\\-,\\.!]+$",
+            "minLength": 10,
+            "maxLength": 256,
+            "description": "A description of the value associated with the event or signal."
+        },
+        "simple_string": {
+            "type": "string",
+            "pattern": "^[\\w\\d_]+$",
+            "examples": ["key1", "key2"],
+            "minLength": 2,
+            "maxLength": 32,
+            "description": "A key to categorize the event or signal."
+        },
+        "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "examples": ["2021-01-01T00:00:00Z", "2024-11-27T13:45:00+01:00"],
+            "description": "The time the event or signal was created, in iso 8601 format."
+        },
+        "value": {
+            "oneOf": [
+                { "type": "string", "description": "A string value." },
+                { "type": "number", "description": "A numeric value." },
+                { "type": "boolean", "description": "A boolean value." },
+                { "type": "object", "description": "An object value." },
+                { "type": "array", "description": "An array value." }
+            ],
+            "description": "The value associated with the event or signal."
+        }
+    }
+}
